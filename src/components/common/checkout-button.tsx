@@ -4,13 +4,16 @@ import type { ProductDetailsType, ProductType } from "@/type";
 import { useAddToCart } from "@/controllers/cartController";
 import { Spinner } from "../ui/spinner";
 import type { VariantProps } from "class-variance-authority";
-import type { RootStateType } from "@/redux/store";
-import { useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
 
 interface Props {
   product: ProductType | ProductDetailsType;
   type: "CARD" | "DETAILS" | "SLIDER";
+  onShowModal?: (
+    type: string,
+    title?: string,
+    size?: string,
+    data?: unknown
+  ) => void;
   quantity?: number;
   variant?: string | null;
 }
@@ -18,39 +21,40 @@ interface Props {
 export const CheckoutButton = ({
   product,
   type,
+  onShowModal,
   quantity = 1,
   variant = null,
 }: Props) => {
-  const navigate = useNavigate();
-
   const { isLoading, fnAddToCart } = useAddToCart(
     product as ProductType,
     quantity,
-    variant
+    variant,
+    product?.id,
+    onShowModal
   );
 
-  const cart = useSelector((state: RootStateType) => state.cart?.items);
-
   const handleCheckout = () => {
-    const isExist = cart?.find((item) => item.productId === product?.id);
-
-    if (isExist) {
-      navigate("/checkout");
+    if (
+      "variant_product" in product &&
+      product.variant_product == 1 &&
+      onShowModal
+    ) {
+      onShowModal("DETAILS", product?.name, "max-w-4xl", product?.id);
       return;
     } else {
-      fnAddToCart(true as boolean);
+      fnAddToCart();
     }
   };
 
   const style = {
     CARD: {
       size: "xs",
-      variant: "outline",
+      variant: "secondary",
       icon: <ClipboardCheck className="h-2 w-2" />,
     },
     DETAILS: {
       size: "lg",
-      variant: "outline",
+      variant: "secondary",
       icon: <ClipboardCheck className="h-4 w-4" />,
     },
   };
@@ -62,7 +66,7 @@ export const CheckoutButton = ({
         disabled={isLoading}
         className="w-full border border-primary"
         size="xs"
-        variant="outline">
+        variant="secondary">
         {isLoading ? (
           <Spinner />
         ) : (
@@ -92,7 +96,7 @@ export const CheckoutButton = ({
       ) : (
         <>
           {style[type].icon}
-          Order now
+          {"Order now"}
         </>
       )}
     </Button>
